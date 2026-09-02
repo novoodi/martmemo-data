@@ -19,6 +19,5 @@ jobs:
           for op in getStoreInfoSvc.do getProductInfoSvc.do "getProductPriceInfoSvc?goodInspectDay=20260828&goodId=1000"; do
             sep='?'; case "$op" in *\?*) sep='&';; esac
             printf '%s -> ' "${op%%\?*}"
-            curl -sS -m 180 -o /dev/null -w 'HTTP %{http_code} connect=%{time_connect}s ttfb=%{time_starttransfer}s total=%{time_total}s size=%{size_download}B
-' "https://apis.data.go.kr/B551919/ProductPriceInfoService/${op}${sep}serviceKey=${KEY}" || echo "FAILED"
+            curl -sS -m 180 -o /dev/null -w 'HTTP %{http_code} connect=%{time_connect}s ttfb=%{time_starttransfer}s total=%{time_total}s size=%{size_download}B\n' "https://apis.data.go.kr/B551919/ProductPriceInfoService/${op}${sep}serviceKey=${KEY}" || echo "FAILED"
           done
