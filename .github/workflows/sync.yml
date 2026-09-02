@@ -1,0 +1,51 @@
+name: 참가격 데이터 동기화
+
+on:
+  schedule:
+    # 매주 토요일 03:00 KST (= 금요일 18:00 UTC). 조사일(격주 금요일) 약 6일 뒤 입력되므로
+    # 새 조사일은 보통 그 다음 주 토요일에 잡힌다.
+    - cron: "0 18 * * 5"
+  workflow_dispatch:
+    inputs:
+      max_new_days:
+        description: "이번 실행에서 새로 받을 조사일 수 (조사일당 약 604회 호출, 일일 한도 2,000)"
+        default: "2"
+        required: false
+
+# 결과 JSON을 저장소에 커밋하기 위한 권한. 인증키는 secrets에서만 읽는다.
+permissions:
+  contents: write
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: API 호출 → data/ 갱신
+        env:
+          KCA_SERVICE_KEY: ${{ secrets.KCA_SERVICE_KEY }}
+          MAX_NEW_DAYS: ${{ github.event.inputs.max_new_days || '2' }}
+        run: python scripts/fetch_prices.py
+
+      - name: 변경 사항 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "변경 없음"
+          else
+            latest=$(python -c "import json;print(json.load(open('data/index.json'))['latestDay'])")
+            git commit -m "data: 동기화 (최신 조사일 $latest)"
+            git push
+          fi
