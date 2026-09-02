@@ -51,7 +51,7 @@ def call(op: str, **params: str) -> ET.Element:
     last_err: Exception | None = None
     for attempt in range(4):
         try:
-            with urllib.request.urlopen(url, timeout=60) as resp:
+            with urllib.request.urlopen(url, timeout=180) as resp:
                 body = resp.read()
             root = ET.fromstring(body)
             code = root.findtext("resultCode")

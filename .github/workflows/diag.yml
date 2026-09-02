@@ -12,3 +12,13 @@ jobs:
             curl -sS -m 20 -o /dev/null -w 'HTTP %{http_code} connect=%{time_connect}s total=%{time_total}s\n' "$u" || echo "FAILED"
           done
           echo "runner public IP: $(curl -s -m 10 https://api.ipify.org || echo '?')"
+      - name: 오퍼레이션별 응답 시간 (키는 secret, 출력은 코드·시간·크기만)
+        env:
+          KEY: ${{ secrets.KCA_SERVICE_KEY }}
+        run: |
+          for op in getStoreInfoSvc.do getProductInfoSvc.do "getProductPriceInfoSvc?goodInspectDay=20260828&goodId=1000"; do
+            sep='?'; case "$op" in *\?*) sep='&';; esac
+            printf '%s -> ' "${op%%\?*}"
+            curl -sS -m 180 -o /dev/null -w 'HTTP %{http_code} connect=%{time_connect}s ttfb=%{time_starttransfer}s total=%{time_total}s size=%{size_download}B
+' "https://apis.data.go.kr/B551919/ProductPriceInfoService/${op}${sep}serviceKey=${KEY}" || echo "FAILED"
+          done
