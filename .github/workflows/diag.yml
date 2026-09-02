@@ -1,0 +1,14 @@
+name: 연결 진단
+on: workflow_dispatch
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: apis.data.go.kr 연결 테스트 (키 없이)
+        run: |
+          for u in https://apis.data.go.kr/ https://www.data.go.kr/ https://www.price.go.kr/ https://www.google.com/; do
+            printf '%s -> ' "$u"
+            curl -sS -m 20 -o /dev/null -w 'HTTP %{http_code} connect=%{time_connect}s total=%{time_total}s\n' "$u" || echo "FAILED"
+          done
+          echo "runner public IP: $(curl -s -m 10 https://api.ipify.org || echo '?')"
