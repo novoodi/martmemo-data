@@ -128,8 +128,13 @@ def price_rows(root: ET.Element) -> list[list[int]]:
     return rows
 
 
-def has_data(day: str, probe_good_id: int) -> bool:
-    return bool(price_rows(call("getProductPriceInfoSvc", goodInspectDay=day, goodId=str(probe_good_id))))
+def has_data(day: str, probe_good_ids: list[int]) -> bool:
+    """조사일 존재 여부. 상품 하나가 그날 미조사일 수 있어(예: 8/21의 goodId 1000) 최대 3개로 확인한다."""
+    for gid in probe_good_ids[:3]:
+        if price_rows(call("getProductPriceInfoSvc", goodInspectDay=day, goodId=str(gid))):
+            return True
+        time.sleep(0.05)
+    return False
 
 
 def fridays_back(days: int) -> list[str]:
@@ -180,7 +185,7 @@ def main() -> None:
     print(f"  판매점 {len(stores)}, 상품 {len(products)}")
 
     have = sorted(p.stem for p in PRICES.glob("*.json"))
-    probe = 1000 if any(p["id"] == 1000 for p in products) else products[0]["id"]
+    probe = [gid for gid in (1000, 553, 224) if any(p["id"] == gid for p in products)] or [products[0]["id"]]
     print(f"조사일 탐색(최근 {scan_days}일 금요일), 보유 {len(have)}일")
     new_days = []
     for day in fridays_back(scan_days):
